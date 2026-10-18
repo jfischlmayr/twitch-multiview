@@ -1,0 +1,14 @@
+.git
+.github
+.gitignore
+.editorconfig
+.dockerignore
+node_modules
+tests
+scripts
+*.md
+package.json
+Dockerfile
+.env
+.env.*
+*.log

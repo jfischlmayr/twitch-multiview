@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c0d12">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="Bis zu vier Twitch-Streams auf einem Bildschirm. Flexible Layouts, frei mischbarer Ton pro Stream und Vollbild.">
+  <title>Multiview — Alle Streams. Ein Bildschirm.</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%239e79ff'/%3E%3Cpath d='M16 16h14v14H16zm18 0h14v14H34zM16 34h14v14H16zm18 0h14v14H34z' fill='%230d0c13'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/file-notice.js" defer></script>
+  <script type="module" src="assets/app.js"></script>
+</head>
+<body>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><rect x="3" y="3" width="11" height="18" rx="1"/><rect x="17" y="3" width="4" height="7" rx=".6"/><rect x="17" y="14" width="4" height="7" rx=".6"/></symbol>
+    <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></symbol>
+    <symbol id="i-rows" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="m10 13 4-4m-5 6-1.5 1.5a3.5 3.5 0 0 1-5-5L7 8a3.5 3.5 0 0 1 5 0m0 8a3.5 3.5 0 0 0 5 0l3.5-3.5a3.5 3.5 0 0 0-5-5L14 9"/></symbol>
+    <symbol id="i-fullscreen" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+    <symbol id="i-exit-fullscreen" viewBox="0 0 24 24"><path d="M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5"/></symbol>
+    <symbol id="i-cinema" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M3 8h18M3 16h18"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 4-5 4H3v8h3l5 4V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-muted" viewBox="0 0 24 24"><path d="m11 4-5 4H3v8h3l5 4V4Zm5 5 6 6m0-6-6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7V5Z"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .6-1.5 1-1.5 2m0 3h.01"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 3h7v7m0-7L10 14m0-10H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-5"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5m-4.8-4a8 8 0 0 1 13-3L20 8M4 16l2.8 3a8 8 0 0 0 13-3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="m16 3 5 5-4 2-3 6-2-2-6 7 4-9-2-2 6-3 2-4Z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 20V4m-6 6 6-6 6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/></symbol>
+  </defs></svg>
+
+  <noscript><div class="no-js">Bitte JavaScript aktivieren, um Twitch-Streams hinzuzufügen und die Layouts zu nutzen.</div></noscript>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand" aria-label="Multiview für Twitch">
+        <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div><span class="brand-name">multiview</span><span class="brand-tag">MADE FOR TWITCH</span></div>
+      </div>
+      <div class="layout-switch" role="group" aria-label="Stream-Layout">
+        <button class="layout-button" data-layout="grid" aria-pressed="true" title="Raster"><svg class="icon"><use href="#i-grid"/></svg><span>Raster</span></button>
+        <button class="layout-button" data-layout="focus" aria-pressed="false" title="Fokus: ein Hauptstream"><svg class="icon"><use href="#i-focus"/></svg><span>Fokus</span></button>
+        <button class="layout-button" data-layout="columns" aria-pressed="false" title="Nebeneinander"><svg class="icon"><use href="#i-columns"/></svg><span>Nebeneinander</span></button>
+        <button class="layout-button" data-layout="rows" aria-pressed="false" title="Untereinander"><svg class="icon"><use href="#i-rows"/></svg><span>Untereinander</span></button>
+      </div>
+      <div class="toolbar-spacer"></div>
+      <div class="top-actions">
+        <button class="icon-button mobile-toggle" id="mobileToggle" title="Streams bearbeiten" aria-label="Streams bearbeiten" aria-expanded="true"><svg class="icon"><use href="#i-panel"/></svg></button>
+        <button class="icon-button share-button" id="shareButton" title="Ansicht-Link kopieren" aria-label="Ansicht-Link kopieren"><svg class="icon"><use href="#i-link"/></svg></button>
+        <button class="icon-button help-button" id="helpButton" title="Hilfe &amp; Tastenkürzel" aria-label="Hilfe &amp; Tastenkürzel"><svg class="icon"><use href="#i-help"/></svg></button>
+        <button class="button secondary cinema-button" id="cinemaButton" title="Kinomodus (T)" aria-pressed="false"><svg class="icon"><use href="#i-cinema"/></svg><span>Kinomodus</span></button>
+        <button class="button primary" id="fullscreenButton" title="Alle Streams im Vollbild (F)" aria-label="Alle Streams im Vollbild"><svg class="icon"><use href="#i-fullscreen"/></svg><span>Vollbild</span></button>
+      </div>
+    </header>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Stream-Einstellungen">
+        <section>
+          <div class="section-heading"><h2>Deine Streams</h2><span class="count" id="streamCount">0 / 4</span></div>
+          <form id="addForm" novalidate>
+            <label class="input-label" for="streamInput">Twitch-Link oder Kanalname</label>
+            <div class="input-wrap">
+              <svg class="icon"><use href="#i-link"/></svg>
+              <textarea id="streamInput" class="stream-input" rows="2" placeholder="twitch.tv/kanalname" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="inputHint formError" maxlength="2000"></textarea>
+            </div>
+            <p class="input-hint" id="inputHint">Auch mehrere Links möglich – einen pro Zeile.</p>
+            <button class="button primary add-button" id="addButton" type="submit"><svg class="icon"><use href="#i-plus"/></svg><span>Streams hinzufügen</span></button>
+            <p class="form-error" id="formError" role="alert" hidden></p>
+          </form>
+          <ul class="stream-list" id="streamList" aria-label="Hinzugefügte Streams"></ul>
+        </section>
+        <section class="audio-box" aria-label="Audio">
+          <div class="eyebrow">Du mischst den Ton</div>
+          <div class="audio-heading"><svg class="icon" id="audioIcon"><use href="#i-muted"/></svg><span id="audioLabel" aria-live="polite">Alle stumm</span></div>
+          <div class="audio-volume"><input id="volumeSlider" type="range" min="0" max="100" value="70" aria-label="Lautstärke der hörbaren Streams"><span class="volume-number" id="volumeValue">70 %</span></div>
+          <p class="audio-note">Mehrere Streams gleichzeitig hörbar: Lautsprecher-Symbol anklicken.</p>
+        </section>
+        <div class="sidebar-bottom">
+          <section class="how-to">
+            <div class="eyebrow">Dein Setup in Sekunden</div>
+            <ol>
+              <li><span class="step-dot">1</span>Bis zu vier Kanäle hinzufügen</li>
+              <li><span class="step-dot">2</span>Das passende Layout wählen</li>
+              <li><span class="step-dot">3</span>Vollbild an. Alles im Blick.</li>
+            </ol>
+          </section>
+          <div class="local-note"><svg class="icon"><use href="#i-lock"/></svg>Dein Setup bleibt in diesem Browser.</div>
+        </div>
+      </aside>
+      <main class="workspace">
+        <div class="workspace-top">
+          <div class="workspace-title"><span class="ready-dot"></span><h1 id="workspaceTitle">Dein Multiview</h1><span class="workspace-status" id="workspaceStatus">Bereit, wenn du es bist.</span></div>
+          <div class="workspace-tools">
+            <label class="mobile-title"><select class="mobile-layout" id="mobileLayout" aria-label="Stream-Layout wählen"><option value="grid">Raster</option><option value="focus">Fokus</option><option value="columns">Nebeneinander</option><option value="rows">Untereinander</option></select></label>
+            <button class="button quiet" id="muteButton" title="Alle Streams stummschalten / Audio wiederherstellen (M)"><svg class="icon"><use href="#i-muted"/></svg><span id="muteLabel">Alle stumm</span></button>
+            <button class="icon-button" id="sidebarToggle" title="Seitenleiste ein-/ausblenden" aria-label="Seitenleiste ein-/ausblenden" aria-expanded="true"><svg class="icon"><use href="#i-panel"/></svg></button>
+          </div>
+        </div>
+        <div class="environment-notice" id="environmentNotice" hidden></div>
+        <div class="environment-notice" id="fileNotice" hidden><strong>Zum Abspielen die Webversion öffnen.</strong><div>Browser laden die App nicht per Doppelklick über <code>file://</code>. Starte im Projektordner <code>python3 -m http.server 8000 --bind 127.0.0.1</code> und öffne <code>http://localhost:8000/</code>.</div></div>
+        <div class="stage-scroll" id="stageScroll">
+          <div class="stage" id="stage">
+            <section class="empty-state" id="emptyState">
+              <div class="empty-content">
+                <div class="mini-layout" aria-hidden="true">
+                  <div class="mini-tile"><i class="mini-dot"></i><svg class="icon"><use href="#i-play"/></svg></div>
+                  <div class="mini-tile"><i class="mini-dot"></i><svg class="icon"><use href="#i-play"/></svg></div>
+                  <div class="mini-tile"><i class="mini-dot"></i><svg class="icon"><use href="#i-play"/></svg></div>
+                  <div class="mini-tile"><i class="mini-dot"></i><svg class="icon"><use href="#i-play"/></svg></div>
+                </div>
+                <div class="empty-eyebrow"><svg class="icon"><use href="#i-spark"/></svg>DEIN PERSÖNLICHER STREAM-SPACE</div>
+                <h2>Alle Streams.<br><span>Ein Bildschirm.</span></h2>
+                <p class="empty-description">Deine Lieblingskanäle, Seite an Seite.<br>Wähle bis zu vier Streams und mach es dir bequem.</p>
+                <button class="button primary" id="firstStreamButton">Ersten Stream hinzufügen<svg class="icon"><use href="#i-arrow"/></svg></button>
+                <div class="empty-benefits">
+                  <span><svg class="icon"><use href="#i-grid"/></svg>4 flexible Layouts</span>
+                  <span><svg class="icon"><use href="#i-volume"/></svg>Dein Audio-Mix</span>
+                  <span><svg class="icon"><use href="#i-fullscreen"/></svg>Einmal Vollbild</span>
+                </div>
+              </div>
+              <span class="empty-corner">Weniger Tabs. Mehr dabei.</span>
+              <span class="empty-corner right"><i></i><i></i><i></i><i></i></span>
+            </section>
+            <div class="stream-grid" id="streamGrid" data-layout="grid" data-count="0" aria-label="Twitch-Streams" hidden></div>
+          </div>
+        </div>
+        <div class="resize-notice" id="resizeNotice" hidden>Dieses Layout braucht mehr Platz. Scrolle zu den weiteren Streams oder nutze Raster, Kinomodus bzw. Vollbild.</div>
+        <footer class="bottom-bar">
+          <div class="bottom-left"><svg class="icon"><use href="#i-monitor"/></svg><span id="bottomStatus">Ein Platz für alle deine Perspektiven.</span></div>
+          <div class="shortcut-hints"><span><kbd>F</kbd> Vollbild</span><span><kbd>T</kbd> Kino</span><span><kbd>M</kbd> Stumm</span><span><kbd>1–4</kbd> Audio</span></div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="helpDialog" aria-labelledby="helpTitle">
+    <div class="dialog-top"><h2 id="helpTitle">Mach es zu deinem Multiview.</h2><button class="icon-button" id="closeHelp" aria-label="Hilfe schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <p class="help-intro">Füge Twitch-Kanäle hinzu, wähle deine Ansicht und entscheide, welche Streams du hören möchtest – einen, zwei oder alle vier gleichzeitig. Ein Twitch-Login ist für frei verfügbare Streams normalerweise nicht nötig.</p>
+    <div class="help-section"><h3>Links &amp; Layouts</h3><p>Es funktionieren Kanalnamen wie <code>twitchdev</code> und Links wie <code>https://www.twitch.tv/twitchdev</code>. Mehrere Links mit Zeilenumbruch, Leerzeichen oder Komma trennen. Clips und Aufzeichnungen werden hier nicht unterstützt. Mit der Pinnadel wird ein Stream zum Hauptstream im Fokus-Layout. Die Pfeile in der Stream-Liste ändern die Reihenfolge.</p></div>
+    <div class="help-section"><h3>Audio mischen</h3><p>Jeder Stream hat einen eigenen Lautsprecher-Schalter, am Stream und in der Liste. Du kannst beliebig viele Streams gleichzeitig hörbar schalten. Der Lautstärkeregler gilt für alle hörbaren Streams; die Twitch-Steuerung im Player kannst du weiterhin einzeln benutzen. „Alle stumm“ merkt sich deine Auswahl und stellt sie beim nächsten Mal wieder her.</p></div>
+    <div class="help-section">
+      <h3>Tastenkürzel</h3>
+      <div class="shortcut-list">
+        <span>Alle Streams im Vollbild</span><kbd>F</kbd>
+        <span>Kinomodus / normale Ansicht</span><kbd>T</kbd>
+        <span>Alle stumm / vorherige Audio-Auswahl wiederherstellen</span><kbd>M</kbd>
+        <span>Audio von Stream 1–4 ein-/ausschalten</span><kbd>1–4</kbd>
+        <span>Kinomodus / Vollbild verlassen</span><kbd>Esc</kbd>
+      </div>
+      <p class="help-footnote">Die Kürzel funktionieren, solange du kein Textfeld und keinen Twitch-Player fokussiert hast.</p>
+    </div>
+    <div class="help-section"><h3>Wenn ein Stream nicht startet</h3><p>Klicke auf Play im jeweiligen Twitch-Player. Auf Mobilgeräten und bei blockiertem Autoplay ist das nötig. Browser erlauben Ton oft erst nach einem Klick auf die Seite – nach dem Neuladen starten daher alle Streams stumm. Offline-Kanäle, Werbung, Login-Anforderungen und Beschränkungen zeigt Twitch selbst an. Du kannst einen Player über den runden Pfeil neu laden. Bei Einbettungsproblemen öffne Multiview direkt in einem eigenen Tab.</p></div>
+    <div class="help-section"><h3>Große Bilder, auch bei mehreren Streams</h3><p>Das Raster passt sich dem verfügbaren Platz an. Andere Layouts können auf kleineren Bildschirmen scrollen, damit die Videos nutzbar bleiben. Vollbild und Kinomodus blenden die Seitenleiste aus. Die originale Twitch-Steuerung und das Seitenverhältnis des Videos bleiben erhalten.</p></div>
+    <div class="help-section"><h3>Lokal ausführen</h3><p>Twitch-Videos laden nicht per Doppelklick über <code>file://</code>. Öffne im Projektordner ein Terminal, starte <code>python3 -m http.server 8000 --bind 127.0.0.1</code> und rufe <code>http://localhost:8000/</code> auf. Auf Windows gegebenenfalls <code>py -m http.server 8000 --bind 127.0.0.1</code> verwenden.</p></div>
+    <div class="help-section"><h3>Dein gespeichertes Setup</h3><p>Kanäle, Layout und Lautstärke werden in diesem Browser gespeichert. Alle Streams starten zunächst stumm. „Ansicht-Link kopieren“ übernimmt Kanäle, Layout und die aktuelle Audio-Auswahl in einen Link; der Ton wird nach dem Öffnen erst mit „Audio wiederherstellen“ oder <kbd>M</kbd> eingeschaltet. Beim Hinzufügen lädt dein Browser die Videos direkt von Twitch.</p></div>
+    <p class="help-footnote">Ein unabhängiges Tool für Twitch. Nicht mit Twitch verbunden. <a href="https://dev.twitch.tv/docs/embed/" target="_blank" rel="noopener">Twitch-Einbettung</a></p>
+  </dialog>
+  <dialog id="shareDialog" aria-labelledby="shareTitle">
+    <div class="dialog-top"><h2 id="shareTitle">Deine Ansicht als Link</h2><button class="icon-button" id="closeShare" aria-label="Linkdialog schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
+    <p class="help-intro">Markiere und kopiere den Link. Er enthält deine Kanäle, dein Layout und die aktuelle Audio-Auswahl.</p>
+    <input class="share-input" id="shareInput" readonly aria-label="Link zur aktuellen Ansicht">
+  </dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>

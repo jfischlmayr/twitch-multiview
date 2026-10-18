@@ -1,0 +1,52 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Syntax, unit and browser tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: npm run check
+      - name: Unit and static tests
+        run: npm test
+      - name: End-to-end tests (headless Chrome, fake Twitch player)
+        env:
+          E2E_REQUIRED: "1"
+          CHROME_BIN: /usr/bin/google-chrome
+        run: npm run test:e2e
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t twitch-multiview:ci .
+      - name: Smoke test the container
+        run: |
+          docker run -d --name multiview -p 8080:80 twitch-multiview:ci
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:8080/healthz && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8080/ | grep -q "<title>Multiview"
+          curl -fsSI http://127.0.0.1:8080/assets/app.js | grep -iq "content-type: .*javascript"
+          curl -fsSI http://127.0.0.1:8080/ | grep -iq "referrer-policy: strict-origin-when-cross-origin"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/tests/)" = "404"
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs multiview

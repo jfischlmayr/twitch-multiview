@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Secrets and local configuration - never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs, screenshots and scratch files
+*.log
+npm-debug.log*
+*.png
+*.jpg
+*.jpeg
+*.headers
+scratch/
+tmp/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
