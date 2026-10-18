@@ -92,7 +92,7 @@ test('adding streams uses the runtime hostname as Twitch parent and starts muted
     assert.deepEqual(await page.eval('window.__created'), CHANNELS);
     const options = await page.eval('Object.values(window.__players).map((p) => p.options)');
     for (const o of options) {
-      assert.deepEqual(o.parent, ['localhost']);
+      assert.deepEqual(o.parent, [new URL(server.url).hostname]);
       assert.equal(o.muted, true);
       assert.equal(o.autoplay, true);
     }
