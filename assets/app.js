@@ -470,12 +470,23 @@ function adaptGeometry() {
     $('resizeNotice').hidden = true;
     return;
   }
-  const gutter = state.cinema ? 4 : window.innerWidth <= 700 ? 20 : window.innerWidth <= 1200 ? 32 : 48;
-  const available = scroll.clientWidth - gutter;
-  const narrowGrid = state.layout === 'grid' && state.channels.length > 1 && available < 810;
+  // Measure the actual stage, including responsive padding, rather than guessing
+  // usable space from window dimensions. Cinema/fullscreen always fit every tile;
+  // normal narrow screens retain scrollable tiles with usable player controls.
+  const stageStyle = getComputedStyle($('stage'));
+  const available = scroll.clientWidth - parseFloat(stageStyle.paddingLeft) - parseFloat(stageStyle.paddingRight);
+  const availableHeight = scroll.clientHeight - parseFloat(stageStyle.paddingTop) - parseFloat(stageStyle.paddingBottom);
+  const fit = state.cinema || isFullscreen();
+  const gap = parseFloat(getComputedStyle(grid).columnGap);
+  const minWidth = 402;
+  const minHeight = 334;
+  const narrowGrid = !fit && state.layout === 'grid' && state.channels.length > 1 && available < 2 * minWidth + gap;
+  grid.style.setProperty('--tile-min-width', fit ? '0px' : `${minWidth}px`);
+  grid.style.setProperty('--focus-min-width', fit ? '0px' : '560px');
+  grid.style.setProperty('--tile-min-height', fit || (state.layout === 'grid' && !narrowGrid) ? '0px' : `${minHeight}px`);
   if (narrowGrid) {
-    grid.style.gridTemplateColumns = 'minmax(402px,1fr)';
-    grid.style.gridTemplateRows = `repeat(${state.channels.length},minmax(334px,1fr))`;
+    grid.style.gridTemplateColumns = 'minmax(var(--tile-min-width),1fr)';
+    grid.style.gridTemplateRows = `repeat(${state.channels.length},minmax(var(--tile-min-height),1fr))`;
   } else {
     grid.style.gridTemplateColumns = '';
     grid.style.gridTemplateRows = '';
@@ -484,9 +495,11 @@ function adaptGeometry() {
     record.tile.style.gridColumn = narrowGrid ? '1' : '';
     record.tile.style.width = narrowGrid ? '100%' : '';
   }
-  const availableHeight = scroll.clientHeight - (state.cinema ? 4 : window.innerWidth <= 700 ? 10 : 20);
-  const roomy = state.layout === 'focus' && state.channels.length === 4 && available >= 1218 && availableHeight >= 674;
-  grid.dataset.focusArrangement = roomy ? 'bottom' : 'side';
+  // Wide stages put focus thumbnails below; taller stages put them alongside.
+  const roomy = fit
+    ? available > availableHeight * 16 / 9
+    : available >= 3 * minWidth + 2 * gap && availableHeight >= 2 * minHeight + gap;
+  grid.dataset.focusArrangement = state.layout === 'focus' && state.channels.length === 4 && roomy ? 'bottom' : 'side';
   requestAnimationFrame(() => {
     $('resizeNotice').hidden = scroll.scrollWidth <= scroll.clientWidth + 5 && scroll.scrollHeight <= scroll.clientHeight + 5;
   });

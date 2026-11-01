@@ -549,3 +549,92 @@ test('opened from file:// the page explains how to run it instead of staying bla
     await page.close();
   }
 });
+
+/** Wait for resize observers and both layout/overflow animation frames. */
+const settleGeometry = (page) => page.eval('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(resolve))))');
+
+async function assertTilesFit(page, count, context) {
+  await settleGeometry(page);
+  const bounds = await page.eval(`(() => {
+    const s = document.getElementById('stageScroll');
+    const viewport = s.getBoundingClientRect();
+    return {
+      warning: !document.getElementById('resizeNotice').hidden,
+      overflowX: s.scrollWidth - s.clientWidth,
+      overflowY: s.scrollHeight - s.clientHeight,
+      tiles: [...document.querySelectorAll('.stream-tile')].map(tile => {
+        const r = tile.getBoundingClientRect();
+        const frame = tile.querySelector('iframe').getBoundingClientRect();
+        return {
+          visible: r.left >= viewport.left - 1 && r.right <= viewport.right + 1 && r.top >= viewport.top - 1 && r.bottom <= viewport.bottom + 1,
+          controlsVisible: [...tile.querySelectorAll('.tile-actions button')].every(button => { const b = button.getBoundingClientRect(); return b.left >= r.left && b.right <= r.right && b.top >= r.top && b.bottom <= r.bottom; }),
+          playerVisible: frame.width > 0 && frame.height > 0 && frame.left >= r.left && frame.right <= r.right && frame.top >= r.top && frame.bottom <= r.bottom,
+        };
+      }),
+    };
+  })()`);
+  assert.equal(bounds.warning, false, `${context}: resize warning`);
+  assert.ok(bounds.overflowX <= 1 && bounds.overflowY <= 1, `${context}: overflow ${JSON.stringify(bounds)}`);
+  assert.equal(bounds.tiles.length, count, context);
+  assert.ok(bounds.tiles.every(t => t.visible && t.playerVisible && t.controlsVisible), `${context}: clipped tile/player ${JSON.stringify(bounds)}`);
+}
+
+test('cinema fits every layout and stream count across wide, short and portrait viewports', { skip }, async () => {
+  await withPage('', async (page) => {
+    for (const [width, height] of [[1366, 768], [1280, 600], [1024, 768], [1920, 1080], [2560, 1080], [768, 1024], [420, 800], [320, 800]]) {
+      await page.setViewport(width, height);
+      for (const count of [1, 2, 3, 4]) {
+        await page.goto('about:blank');
+        await page.goto(server.url + `#channels=${CHANNELS.slice(0, count).join(',')}`);
+        await ready(page, count);
+        await page.key('t');
+        for (const layout of ['grid', 'focus', 'columns', 'rows']) {
+          await page.click(`.layout-button[data-layout="${layout}"]`);
+          await assertTilesFit(page, count, `${width}x${height}, ${count}, ${layout}`);
+        }
+        assert.equal(await page.eval('window.__created.length'), count, 'resizing/layout must retain players');
+      }
+    }
+  });
+});
+
+test('normal desktop grid fits short viewports and responds to sidebar changes', { skip }, async () => {
+  await withPage(HASH4, async (page) => {
+    await ready(page, 4);
+    for (const [width, height] of [[1366, 768], [1280, 600], [1920, 1080]]) {
+      await page.setViewport(width, height);
+      await assertTilesFit(page, 4, `normal ${width}x${height}`);
+      await page.click('#sidebarToggle');
+      await assertTilesFit(page, 4, `sidebar closed ${width}x${height}`);
+      await page.click('#sidebarToggle');
+    }
+  });
+});
+
+test('native fullscreen fits all layouts and restores normal or cinema mode on exit', { skip }, async () => {
+  await withPage(HASH4, async (page) => {
+    await ready(page, 4);
+    await page.setViewport(1366, 768);
+    await page.click(tileAudio('alpha'));
+    for (const wasCinema of [false, true]) {
+      if (wasCinema) await page.key('t');
+      // Real Fullscreen API entry needs activation; programmatic el.click() alone lacks it.
+      await page.cmd('Runtime.evaluate', { expression: 'document.getElementById("fullscreenButton").click()', userGesture: true });
+      await page.waitFor('document.fullscreenElement === document.getElementById("app")');
+      for (const layout of ['grid', 'focus', 'columns', 'rows']) {
+        await page.click(`.layout-button[data-layout="${layout}"]`);
+        await assertTilesFit(page, 4, `native fullscreen ${layout}`);
+      }
+      await page.setViewport(1280, 600);
+      await assertTilesFit(page, 4, 'native fullscreen after resize');
+      await page.eval('document.exitFullscreen()');
+      await page.waitFor(`!document.fullscreenElement && document.getElementById('app').classList.contains('cinema') === ${wasCinema}`);
+      assert.equal(await page.eval('document.getElementById("app").classList.contains("cinema")'), wasCinema);
+      await page.click('.layout-button[data-layout="grid"]');
+      await assertTilesFit(page, 4, `restored cinema=${wasCinema}`);
+      assert.equal(await page.eval('window.__created.length'), 4);
+      assert.deepEqual(audible(await snapshot(page)), ['alpha']);
+      if (wasCinema) await page.key('Escape');
+    }
+  });
+});
